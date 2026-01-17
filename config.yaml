@@ -1,17 +1,22 @@
 timezone: "Europe/Rome"
 
+# Maximum number of posts per day to avoid spam
 max_posts_per_day: 2
 
+# Windows define when the bot can post. Outside these times no posts will be sent.
 windows:
   - start: "09:00"
     end: "21:30"
 
+# Target channels for the bot. Only the Italian channel is active; the English channel can be
+# enabled later by adding its handle and setting `en` to a non-empty value.
 channels:
   it: "@offerte_bonus_italia"
   en: ""
 
+# Filters define words that must appear in the title or summary and words that should block a post.
 filters:
-  # Deve contenere ALMENO una di queste parole/caratteri per essere considerata "offerta"
+  # The offer must contain at least one of these keywords for it to be considered relevant.
   required_keywords_any:
     - "offerta"
     - "sconto"
@@ -24,29 +29,33 @@ filters:
     - "Cyber"
     - "2x1"
 
-  # Blocca contenuti NON-offerta tipici
+  # Keywords that should block a post if present (to avoid non-offer news).
   blocked_keywords:
     - "cinema"
     - "film"
     - "trailer"
     - "recensione"
     - "hands-on"
-    - "bug"          # se vuoi lasciare anche offerte con bug, rimuovi questa riga
+    - "bug"
     - "scommesse"
     - "casino"
     - "roulette"
     - "martingale"
     - "wager"
 
+  # Maximum length for titles to prevent overly long posts
   max_title_len: 120
 
+# Posting behaviour settings
 posting:
-  poll_interval_seconds: 900
-  cooldown_seconds: 60
+  # How often to poll the sources for new offers (seconds)
+  poll_interval_seconds: 900   # 15 minutes
+  # How long to wait between posts to ensure spacing (seconds)
+  cooldown_seconds: 3600        # 1 hour
 
+# Sources provide RSS feeds for offers. Each entry includes a name, type, URL,
+# language and region. Only Italian (it/IT) sources are currently enabled.
 sources:
-  # Feed “offerte-only” / “offerte e sconti”
-  # Tom’s Hardware ha feed RSS per “Offerte” dalla pagina feed-rss.  [oai_citation:0‡Tom's Hardware](https://www.tomshw.it/feed-rss)
   - name: "Tom's Hardware - Offerte"
     type: "rss"
     url: "https://www.tomshw.it/feed/offerta"
@@ -54,7 +63,6 @@ sources:
     region: "IT"
     rank: 1
 
-  # HDBlog - usiamo un feed “offerte” (se questo non risponde, lo vediamo nei log e lo cambiamo)
   - name: "HDBlog - Offerte"
     type: "rss"
     url: "https://www.hdblog.it/rss/offerte/"
