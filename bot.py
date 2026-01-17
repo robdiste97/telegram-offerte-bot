@@ -11,7 +11,7 @@ import feedparser
 import yaml
 from flask import Flask
 
-# ---------------- Render keep-alive (porta richiesta) ----------------
+# ---------------- Render keep-alive ----------------
 app = Flask(__name__)
 
 @app.get("/")
@@ -23,7 +23,7 @@ def health():
     return "ok", 200
 
 # ---------------- Telegram ----------------
-TOKEN = os.getenv("BOT_TOKEN")  # obbligatoria
+TOKEN = os.getenv("BOT_TOKEN")
 
 def tg_send(chat_id: str, text: str):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -33,7 +33,7 @@ def tg_send(chat_id: str, text: str):
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "HTML",
-            "disable_web_page_preview": True
+            "disable_web_page_preview": True,
         },
         timeout=25,
     )
@@ -77,9 +77,7 @@ def in_windows(cfg, dt: datetime) -> bool:
 
 def short(s: str, max_len: int) -> str:
     s = " ".join((s or "").strip().split())
-    if len(s) <= max_len:
-        return s
-    return s[: max_len - 1] + "…"
+    return s if len(s) <= max_len else (s[: max_len - 1] + "…")
 
 def make_hash(title: str, link: str) -> str:
     raw = (title + "|" + link).encode("utf-8")
@@ -87,9 +85,18 @@ def make_hash(title: str, link: str) -> str:
 
 def passes_filters(cfg, title: str, summary: str) -> bool:
     text = (title + " " + summary).lower()
-    for kw in (cfg.get("filters", {}).get("blocked_keywords", []) or []):
-        if kw.lower() in text:
+
+    # must contain at least one required keyword
+    required_any = cfg.get("filters", {}).get("required_keywords_any", []) or []
+    if required_any:
+        if not any(k.lower() in text for k in required_any):
             return False
+
+    # blocked keywords
+    blocked = cfg.get("filters", {}).get("blocked_keywords", []) or []
+    if any(k.lower() in text for k in blocked):
+        return False
+
     return True
 
 def format_post_it(source_name: str, title: str, link: str) -> str:
@@ -101,7 +108,6 @@ def format_post_it(source_name: str, title: str, link: str) -> str:
     )
 
 def fetch_rss(url: str):
-    # Fetch robusto: molti siti bloccano user-agent vuoti dei parser
     headers = {
         "User-Agent": "Mozilla/5.0 (compatible; offerte_bonus_italia/1.0)"
     }
@@ -113,7 +119,6 @@ def fetch_rss(url: str):
 def bot_loop():
     cfg = load_config()
     tz = cfg.get("timezone", "Europe/Rome")
-
     poll = int(cfg.get("posting", {}).get("poll_interval_seconds", 900))
     cooldown = int(cfg.get("posting", {}).get("cooldown_seconds", 60))
     max_posts = int(cfg.get("max_posts_per_day", 2))
@@ -131,6 +136,7 @@ def bot_loop():
             time.sleep(60)
 
     state = load_state()
+    sources = cfg.get("sources", []) or []
 
     def reset_daily(dt: datetime):
         day = dt.strftime("%Y-%m-%d")
@@ -139,8 +145,6 @@ def bot_loop():
             state["posts_today"] = 0
             state["recent_hashes"] = (state.get("recent_hashes", []) or [])[-500:]
             save_state(state)
-
-    sources = cfg.get("sources", []) or []
 
     while True:
         dt = now_local(tz)
@@ -163,13 +167,13 @@ def bot_loop():
                 if s.get("type") != "rss":
                     continue
 
-                # SOLO IT (per ora)
+                # SOLO IT
                 if s.get("region") != "IT" or s.get("lang") != "it":
                     continue
 
-                url = s["url"]
                 name = s.get("name", "Fonte")
                 rank = int(s.get("rank", 1000))
+                url = s["url"]
 
                 try:
                     parsed = fetch_rss(url)
@@ -177,9 +181,8 @@ def bot_loop():
                     print(f"RSS ERROR: {name} -> {repr(ex)}")
                     continue
 
-                entries = parsed.entries or []
-                for e in entries[:30]:
-                    title = short(e.get("title", ""), int(cfg.get("filters", {}).get("max_title_len", 110)))
+                for e in (parsed.entries or [])[:30]:
+                    title = short(e.get("title", ""), int(cfg.get("filters", {}).get("max_title_len", 120)))
                     link = (e.get("link") or "").strip()
                     summary = (e.get("summary") or e.get("description") or "").strip()
 
@@ -222,7 +225,6 @@ def bot_loop():
             print("BOT ERROR:", repr(ex))
             time.sleep(60)
 
-# ---------------- Main ----------------
 if __name__ == "__main__":
     t = threading.Thread(target=bot_loop, daemon=True)
     t.start()
