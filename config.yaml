@@ -1,64 +1,33 @@
-# =========================================
-# Telegram Deals Bot - Config (IT + EN)
-# Regole: IT prioritario, EN solo top/global, max 2 post/giorno
-# =========================================
-
 timezone: "Europe/Rome"
 
-# Anti-spam: massimo 2 post al giorno in totale (IT+EN)
 max_posts_per_day: 2
 
-# Finestre in cui il bot può pubblicare (orario Italia)
-# (Fuori da queste finestre: niente post)
 windows:
-  - start: "11:00"
-    end: "13:30"
-  - start: "18:00"
+  - start: "09:00"
     end: "21:30"
 
-# Canali di destinazione
 channels:
   it: "@offerte_bonus_italia"
-  en: ""   # metti "@TUO_CANALE_EN" quando lo crei
+  en: ""
 
-# Filtri globali
 filters:
-  # Filtri soft: evitano che diventi un canale spam / gamblin
+  blocked_keywords:
+    - "casino"
+    - "roulette"
+    - "scommesse"
+    - "bet"
+    - "wager"
+    - "martingale"
+    - "leva"
+    - "futures"
 
-  # Se vuoi essere ancora più “premium”, puoi limitare a poche parole chiave “buone”
-  # (lasciato vuoto per non bloccare troppo all’inizio)
-  required_keywords_any: []
-
-  # Lunghezze massime per evitare wall-of-text nei post
   max_title_len: 110
-  max_summary_len: 240
 
-# Regole per mercato
-markets:
-  it:
-    enabled: true
-    priority: 1
-    # IT: pubblichiamo abbastanza liberamente ma sempre con anti-spam
-    allow_regions: ["IT"]
-    language: "it"
+posting:
+  poll_interval_seconds: 900     # 15 min
+  cooldown_seconds: 60           # pausa tra post
 
-  en:
-    enabled: true
-    priority: 2
-    # EN: solo global/top (EU o GLOBAL)
-    allow_regions: ["EU", "GLOBAL"]
-    language: "en"
-
-# Fonti (RSS/Atom).
-# IMPORTANTISSIMO:
-# - region: IT / EU / GLOBAL
-# - lang: it / en
-# - rank: più basso = più importante (IT deve vincere su EN)
 sources:
-  # ---------------------------
-  # ITALIA – SITI OFFERTE (AMAZON + SIMILI)
-  # ---------------------------
-
   - name: "HDblog Offerte"
     type: "rss"
     url: "https://www.hdblog.it/rss/offerte/"
@@ -66,21 +35,21 @@ sources:
     region: "IT"
     rank: 5
 
-  - name: "SmartWorld Offerte"
+  - name: "SmartWorld"
     type: "rss"
     url: "https://www.smartworld.it/feed"
     lang: "it"
     region: "IT"
     rank: 6
 
-  - name: "Tech Princess Offerte"
+  - name: "Tech Princess"
     type: "rss"
     url: "https://techprincess.it/feed/"
     lang: "it"
     region: "IT"
     rank: 7
 
-  - name: "TuttoAndroid Offerte"
+  - name: "TuttoAndroid"
     type: "rss"
     url: "https://www.tuttoandroid.net/feed/"
     lang: "it"
@@ -115,10 +84,6 @@ sources:
     region: "IT"
     rank: 12
 
-  # ---------------------------
-  # EXTRA: DEAL GENERICI (AMAZON SEMPRE PRESENTE)
-  # ---------------------------
-
   - name: "Tom's Hardware Italia"
     type: "rss"
     url: "https://www.tomshw.it/feed/"
@@ -132,48 +97,3 @@ sources:
     lang: "it"
     region: "IT"
     rank: 14
-    
-  # ---------------------------
-  # EN - Deals / Top global
-  # ---------------------------
-  - name: "TechRadar - Deals"
-    type: "rss"
-    url: "https://www.techradar.com/feeds/articletype/deals"
-    lang: "en"
-    region: "GLOBAL"
-    rank: 50
-
-  # ---------------------------
-  # EN - Global news (solo quando è davvero top)
-  # (serve per pescare promo/servizi/fintech che spesso sono monetizzabili)
-  # ---------------------------
-  - name: "TechCrunch - Main Feed"
-    type: "rss"
-    url: "https://techcrunch.com/feed/"
-    lang: "en"
-    region: "GLOBAL"
-    rank: 70
-
-# Comportamento di pubblicazione
-posting:
-  # Se true: prova a fare (quando possibile) 1 IT + 1 EN al giorno.
-  # Se false: max 2 totali, scegliendo i migliori in base a rank/filtri.
-  prefer_one_it_and_one_en: true
-
-  # Pausa tra un post e l’altro (secondi)
-  cooldown_seconds: 60
-
-  # Quanto spesso controllare le fonti (secondi)
-  poll_interval_seconds: 900   # 15 min
-
-# Link handling (monetizzazione)
-links:
-  # Se usi un "bridge" (una tua landing / redirect), mettilo qui.
-  # Il bot potrà sostituire i link originali con il tuo dominio (es. per tracking).
-  # Lasciato vuoto di default.
-  redirect_base_url: ""
-
-  # Parametri UTM standard (se vuoi analytics)
-  utm_source: "telegram"
-  utm_medium: "channel"
-  utm_campaign: "deals_bot"
