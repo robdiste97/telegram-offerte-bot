@@ -11,89 +11,53 @@ channels:
   en: ""
 
 filters:
+  # Deve contenere ALMENO una di queste parole/caratteri per essere considerata "offerta"
+  required_keywords_any:
+    - "offerta"
+    - "sconto"
+    - "coupon"
+    - "codice"
+    - "€"
+    - "%"
+    - "Prime"
+    - "Black Friday"
+    - "Cyber"
+    - "2x1"
+
+  # Blocca contenuti NON-offerta tipici
   blocked_keywords:
+    - "cinema"
+    - "film"
+    - "trailer"
+    - "recensione"
+    - "hands-on"
+    - "bug"          # se vuoi lasciare anche offerte con bug, rimuovi questa riga
+    - "scommesse"
     - "casino"
     - "roulette"
-    - "scommesse"
-    - "bet"
-    - "wager"
     - "martingale"
-    - "leva"
-    - "futures"
+    - "wager"
 
-  max_title_len: 110
+  max_title_len: 120
 
 posting:
-  poll_interval_seconds: 900     # 15 min
-  cooldown_seconds: 60           # pausa tra post
+  poll_interval_seconds: 900
+  cooldown_seconds: 60
 
 sources:
-  - name: "HDblog Offerte"
+  # Feed “offerte-only” / “offerte e sconti”
+  # Tom’s Hardware ha feed RSS per “Offerte” dalla pagina feed-rss.  [oai_citation:0‡Tom's Hardware](https://www.tomshw.it/feed-rss)
+  - name: "Tom's Hardware - Offerte"
+    type: "rss"
+    url: "https://www.tomshw.it/feed/offerta"
+    lang: "it"
+    region: "IT"
+    rank: 1
+
+  # HDBlog - usiamo un feed “offerte” (se questo non risponde, lo vediamo nei log e lo cambiamo)
+  - name: "HDBlog - Offerte"
     type: "rss"
     url: "https://www.hdblog.it/rss/offerte/"
     lang: "it"
     region: "IT"
-    rank: 5
-
-  - name: "SmartWorld"
-    type: "rss"
-    url: "https://www.smartworld.it/feed"
-    lang: "it"
-    region: "IT"
-    rank: 6
-
-  - name: "Tech Princess"
-    type: "rss"
-    url: "https://techprincess.it/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 7
-
-  - name: "TuttoAndroid"
-    type: "rss"
-    url: "https://www.tuttoandroid.net/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 8
-
-  - name: "Telefonino.net"
-    type: "rss"
-    url: "https://www.telefonino.net/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 9
-
-  - name: "IlSoftware.it"
-    type: "rss"
-    url: "https://www.ilsoftware.it/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 10
-
-  - name: "Geekissimo"
-    type: "rss"
-    url: "https://geekissimo.com/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 11
-
-  - name: "Libero Tecnologia"
-    type: "rss"
-    url: "https://www.libero.it/tecnologia/feed/rss"
-    lang: "it"
-    region: "IT"
-    rank: 12
-
-  - name: "Tom's Hardware Italia"
-    type: "rss"
-    url: "https://www.tomshw.it/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 13
-
-  - name: "Wired Italia"
-    type: "rss"
-    url: "https://www.wired.it/feed/rss"
-    lang: "it"
-    region: "IT"
-    rank: 14
+    rank: 2
