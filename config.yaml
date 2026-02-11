@@ -1,78 +1,84 @@
 timezone: "Europe/Rome"
 
-# massimo 2 post al giorno
-max_posts_per_day: 2
+# massimo 3 post al giorno
+max_posts_per_day: 3
 
-# il bot può pubblicare dalle 9:00 alle 21:30
+# il bot può pubblicare dalle 9 alle 22
 windows:
   - start: "09:00"
-    end: "21:30"
+    end: "22:00"
 
 channels:
   it: "@offerte_bonus_italia"
-  en: ""     # canale inglese disattivato
+  en: ""    # disattivato per ora
 
 filters:
-  # Lasciamo vuota la lista di parole obbligatorie per non perdere offerte valide
+  # nessuna parola obbligatoria: ogni titolo può essere valido
   required_keywords_any: []
 
-  # Parole da bloccare (notizie, recensioni, scommesse, ecc.)
+  # blocchiamo solo contenuti non desiderati
   blocked_keywords:
-    - "cinema"
-    - "film"
-    - "trailer"
-    - "recensione"
-    - "hands-on"
     - "scommesse"
     - "casino"
     - "roulette"
     - "martingale"
     - "wager"
-    - "lotteria"
-    - "puntate"
 
-  # Limite lunghezza titolo (evita titoli troppo lunghi)
   max_title_len: 120
 
 posting:
-  # controlla i feed ogni 15 minuti
-  poll_interval_seconds: 900
-  # attende 1 ora tra un post e l'altro
-  cooldown_seconds: 3600
+  # controlla i feed ogni 30 minuti
+  poll_interval_seconds: 1800
+  # aspetta almeno 30 minuti fra un post e l’altro
+  cooldown_seconds: 1800
 
+# fonti varie (offerte, tecnologia, hi‑tech)
 sources:
-  # feed dedicati alle offerte (Amazon spesso inclusa)
-  - name: "HDblog - Offerte"
+  - name: "HDblog Offerte"
     type: "rss"
     url: "https://www.hdblog.it/rss/offerte/"
     lang: "it"
     region: "IT"
-    rank: 5
+    rank: 1
 
   - name: "Tom's Hardware Italia"
     type: "rss"
     url: "https://www.tomshw.it/feed/"
     lang: "it"
     region: "IT"
-    rank: 6
+    rank: 2
 
   - name: "SmartWorld Italia"
     type: "rss"
     url: "https://www.smartworld.it/feed"
     lang: "it"
     region: "IT"
-    rank: 7
+    rank: 3
 
   - name: "TechPrincess"
     type: "rss"
     url: "https://techprincess.it/feed/"
     lang: "it"
     region: "IT"
-    rank: 8
+    rank: 4
+
+  - name: "Telefonino.net"
+    type: "rss"
+    url: "https://www.telefonino.net/feed/"
+    lang: "it"
+    region: "IT"
+    rank: 5
 
   - name: "IlSoftware.it"
     type: "rss"
     url: "https://www.ilsoftware.it/feed/"
     lang: "it"
     region: "IT"
-    rank: 9
+    rank: 6
+
+  - name: "Geekissimo"
+    type: "rss"
+    url: "https://geekissimo.com/feed/"
+    lang: "it"
+    region: "IT"
+    rank: 7
