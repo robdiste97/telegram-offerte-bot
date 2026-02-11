@@ -11,7 +11,7 @@ import feedparser
 import yaml
 from flask import Flask
 
-# --------- Web server per Render (tenere l'istanza attiva) ---------
+# ----- Web server per Render (keep-alive) -----
 app = Flask(__name__)
 
 @app.get("/")
@@ -22,7 +22,7 @@ def home():
 def health():
     return "ok", 200
 
-# ---------------- Telegram ----------------
+# -------- Telegram --------
 TOKEN = os.getenv("BOT_TOKEN")
 
 def tg_send(chat_id: str, text: str):
@@ -39,7 +39,7 @@ def tg_send(chat_id: str, text: str):
     )
     return r.status_code, r.text
 
-# --------------- Configurazione/Salvataggio stato ------------------
+# ----- Config / Stato -----
 CONFIG_PATH = "config.yaml"
 STATE_PATH = "state.json"
 
@@ -62,10 +62,7 @@ def now_local(tz_name: str):
     return datetime.now(ZoneInfo(tz_name))
 
 def in_windows(cfg, dt: datetime) -> bool:
-    windows = cfg.get("windows", []) or []
-    if not windows:
-        return True
-    for w in windows:
+    for w in cfg.get("windows", []):
         sh, sm = map(int, w["start"].split(":"))
         eh, em = map(int, w["end"].split(":"))
         start = dtime(sh, sm)
@@ -84,10 +81,9 @@ def make_hash(title: str, link: str) -> str:
 
 def passes_filters(cfg, title: str, summary: str) -> bool:
     text = (title + " " + summary).lower()
-    # non ci sono parole obbligatorie: filtriamo solo parole bloccate
-    blocked = cfg.get("filters", {}).get("blocked_keywords", []) or []
-    if any(k.lower() in text for k in blocked):
-        return False
+    for kw in cfg.get("filters", {}).get("blocked_keywords", []) or []:
+        if kw.lower() in text:
+            return False
     return True
 
 def format_post_it(source_name: str, title: str, link: str) -> str:
@@ -100,7 +96,7 @@ def format_post_it(source_name: str, title: str, link: str) -> str:
 
 def fetch_rss(url: str):
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; offerte_bonus_italia/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; OfferteBot/1.0)"
     }
     r = requests.get(url, headers=headers, timeout=25)
     if r.status_code >= 400:
@@ -110,21 +106,18 @@ def fetch_rss(url: str):
 def bot_loop():
     cfg = load_config()
     tz = cfg.get("timezone", "Europe/Rome")
-    poll = int(cfg.get("posting", {}).get("poll_interval_seconds", 900))
-    cooldown = int(cfg.get("posting", {}).get("cooldown_seconds", 3600))
-    max_posts = int(cfg.get("max_posts_per_day", 2))
+    poll = int(cfg.get("posting", {}).get("poll_interval_seconds", 1800))
+    cooldown = int(cfg.get("posting", {}).get("cooldown_seconds", 1800))
+    max_posts = int(cfg.get("max_posts_per_day", 3))
 
     channel_it = (cfg.get("channels", {}).get("it") or "").strip()
 
     if not TOKEN:
         print("BOT ERROR: Missing BOT_TOKEN env var")
-        while True:
-            time.sleep(60)
-
+        return
     if not channel_it.startswith("@"):
         print("BOT ERROR: channels.it must be like @nomecanale")
-        while True:
-            time.sleep(60)
+        return
 
     state = load_state()
     sources = cfg.get("sources", []) or []
@@ -134,7 +127,6 @@ def bot_loop():
         if state.get("day") != day:
             state["day"] = day
             state["posts_today"] = 0
-            # conserva un po’ di storia per evitare doppioni
             state["recent_hashes"] = (state.get("recent_hashes", []) or [])[-500:]
             save_state(state)
 
@@ -143,9 +135,6 @@ def bot_loop():
         reset_daily(dt)
 
         try:
-            # log tick
-            print(f"[{dt.strftime('%Y-%m-%d %H:%M:%S')}] tick posts_today={state['posts_today']}")
-
             if not in_windows(cfg, dt):
                 time.sleep(60)
                 continue
@@ -158,7 +147,6 @@ def bot_loop():
             for s in sources:
                 if s.get("type") != "rss":
                     continue
-                # solo Italia
                 if s.get("region") != "IT" or s.get("lang") != "it":
                     continue
                 name = s.get("name", "Fonte")
@@ -166,8 +154,7 @@ def bot_loop():
                 url = s["url"]
                 try:
                     parsed = fetch_rss(url)
-                except Exception as ex:
-                    print(f"RSS ERROR: {name} -> {repr(ex)}")
+                except Exception:
                     continue
                 for e in (parsed.entries or [])[:30]:
                     title = short(e.get("title", ""), int(cfg.get("filters", {}).get("max_title_len", 120)))
@@ -183,36 +170,42 @@ def bot_loop():
                     candidates.append((rank, name, title, link, h))
 
             candidates.sort(key=lambda x: x[0])
-            # log numero di candidati
-            print(f"[{dt.strftime('%Y-%m-%d %H:%M:%S')}] candidates={len(candidates)}")
 
-            # Pubblica solo il primo candidato per questo ciclo
             for _, source_name, title, link, h in candidates:
                 if state["posts_today"] >= max_posts:
                     break
                 msg = format_post_it(source_name, title, link)
-                code, body = tg_send(channel_it, msg)
+                code, _ = tg_send(channel_it, msg)
                 if code == 200:
                     state["posts_today"] += 1
                     state["recent_hashes"].append(h)
                     state["recent_hashes"] = state["recent_hashes"][-1500:]
                     save_state(state)
-                    print(f"POSTED OK: {title}")
-                    # esce dal ciclo per rispettare il cooldown
+                    # solo un post per ciclo
                     break
-                else:
-                    print(f"TELEGRAM ERROR: code={code} body={body[:300]}")
-                    time.sleep(120)
 
             time.sleep(poll)
-
-        except Exception as ex:
-            print("BOT ERROR:", repr(ex))
+        except Exception:
+            # se qualcosa va storto, aspetta un minuto e riprova
             time.sleep(60)
 
-# Avvio del bot e del web server
+# ---- Keep-alive thread per Render Free ----
+def keep_alive():
+    url = os.getenv("RENDER_EXTERNAL_URL") or os.getenv("SELF_URL", "")
+    if not url:
+        return
+    while True:
+        try:
+            requests.get(url + "/health", timeout=10)
+        except Exception:
+            pass
+        time.sleep(300)  # ping ogni 5 minuti
+
 if __name__ == "__main__":
-    t = threading.Thread(target=bot_loop, daemon=True)
-    t.start()
+    # avvia bot in background
+    threading.Thread(target=bot_loop, daemon=True).start()
+    # avvia keep-alive in background (se URL presente)
+    threading.Thread(target=keep_alive, daemon=True).start()
+    # avvia web server
     port = int(os.environ.get("PORT", "10000"))
     app.run(host="0.0.0.0", port=port)
