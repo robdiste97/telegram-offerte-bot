@@ -1,84 +1,43 @@
 timezone: "Europe/Rome"
 
-# massimo 3 post al giorno
 max_posts_per_day: 3
 
-# il bot può pubblicare dalle 9 alle 22
 windows:
   - start: "09:00"
     end: "22:00"
 
 channels:
   it: "@offerte_bonus_italia"
-  en: ""    # disattivato per ora
 
 filters:
-  # nessuna parola obbligatoria: ogni titolo può essere valido
-  required_keywords_any: []
-
-  # blocchiamo solo contenuti non desiderati
   blocked_keywords:
-    - "scommesse"
     - "casino"
     - "roulette"
-    - "martingale"
+    - "scommesse"
+    - "bet"
     - "wager"
 
-  max_title_len: 120
-
 posting:
-  # controlla i feed ogni 30 minuti
   poll_interval_seconds: 1800
-  # aspetta almeno 30 minuti fra un post e l’altro
-  cooldown_seconds: 1800
 
-# fonti varie (offerte, tecnologia, hi‑tech)
 sources:
+
   - name: "HDblog Offerte"
     type: "rss"
     url: "https://www.hdblog.it/rss/offerte/"
-    lang: "it"
-    region: "IT"
     rank: 1
 
-  - name: "Tom's Hardware Italia"
-    type: "rss"
-    url: "https://www.tomshw.it/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 2
-
-  - name: "SmartWorld Italia"
+  - name: "SmartWorld"
     type: "rss"
     url: "https://www.smartworld.it/feed"
-    lang: "it"
-    region: "IT"
+    rank: 2
+
+  - name: "Tom's Hardware"
+    type: "rss"
+    url: "https://www.tomshw.it/feed/"
     rank: 3
 
   - name: "TechPrincess"
     type: "rss"
     url: "https://techprincess.it/feed/"
-    lang: "it"
-    region: "IT"
     rank: 4
-
-  - name: "Telefonino.net"
-    type: "rss"
-    url: "https://www.telefonino.net/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 5
-
-  - name: "IlSoftware.it"
-    type: "rss"
-    url: "https://www.ilsoftware.it/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 6
-
-  - name: "Geekissimo"
-    type: "rss"
-    url: "https://geekissimo.com/feed/"
-    lang: "it"
-    region: "IT"
-    rank: 7
